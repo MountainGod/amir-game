@@ -1,0 +1,28 @@
+body{
+		text-align: center;
+	}
+#board{
+		height: 540px;
+		width: 630px;
+		background-color: blue;
+		border:10px solid navy;
+		margin:0 auto;
+		display: flex;
+		flex-wrap:wrap;
+	    margin-top: 80px;
+	}
+
+.piece{
+		height:80px;
+		width:80px;
+		margin:5px;
+		background-color: white ;
+		border-radius:50%;
+		border:5px navy;
+	}
+.red{
+		background-color:red ;
+	}
+.yellow{
+		background-color:yellow;
+	}
