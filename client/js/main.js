@@ -3,6 +3,7 @@ const yellowPlayer = "Y";
 let currentPlayer  = redPlayer;
 
 let currentCols;
+let winner   = null;
 let gameOver = false;
 
 let board;
@@ -24,8 +25,6 @@ function setGame() {
 			piece.classList.add("piece");
 			piece.addEventListener("click", setPiece);
 			document.getElementById("board").append(piece);
-			
-			
 		}
 		board.push(row);
 	}
@@ -104,17 +103,31 @@ function checkWinner() {
 }
 
 function setWinner(i, j) {
-	let winner = document.getElementById("winner");
+	let winnerTitle = document.getElementById("winner");
 	if (board[i][j] === redPlayer) {
-		winner.innerText = "Red Wins";
+		winnerTitle.innerText = "Red Wins";
 	}
 	else {
-		winner.innerText = "Yellow Wins";
+		winnerTitle.innerText = "Yellow Wins";
 	}
+	winner   = board[i][j];
 	gameOver = true;
 }
 
 function resetGame() {
-	gameOver = false;
+	gameOver      = false;
+	currentPlayer = winner ?? redPlayer;
+	currentCols   = null;
+	board         = null;
+	
+	const lastBoard = document.getElementById("board");
+	while (lastBoard.firstChild) {
+		lastBoard.removeChild(lastBoard.lastChild);
+	}
+	
+	document.getElementById("winner").innerText = "";
+	
 	setGame();
 }
+
+document.getElementById("resetBtn").addEventListener("click", resetGame);
