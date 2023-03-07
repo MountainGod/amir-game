@@ -18,11 +18,44 @@ window.onload = setGame;
 socket.on("details", (data) => {
 	if (data.valid) {
 		myColor = data.color;
+		
+		document.getElementById("currentPlayer").innerText = `you are ${data.color === "R" ? "red" : "yellow"}`;
 	}
 	else {
 		socket.disconnect();
+		
+		document.getElementById("currentPlayer").innerText = "You cannot play right now.";
 	}
 });
+
+socket.on("move", (move) => {
+	if (move.color !== myColor) {
+		setPiece(move.position, move.color);
+	}
+});
+
+socket.on("reset", (data) => {
+	resetGame();
+});
+
+socket.on("winner", (whoWon) => {
+	let winnerTitle = document.getElementById("winner");
+	if (whoWon === redPlayer) {
+		winnerTitle.innerText = "Red Wins";
+	}
+	else {
+		winnerTitle.innerText = "Yellow Wins";
+	}
+	winner     = whoWon;
+	isGameOver = true;
+});
+
+function sendMove(position) {
+	socket.emit("move", {
+		position: position,
+		player:   myColor,
+	});
+}
 
 function setGame() {
 	board       = [];
@@ -43,21 +76,22 @@ function setGame() {
 }
 
 function setPieceListener() {
-	setPiece(this.id);
+	if (myColor === currentTurnPlayer) {
+		setPiece(this.id, myColor);
+		sendMove(this.id);
+	}
 }
 
-
-function setPiece(position) {
+function setPiece(position, color) {
 	if (isGameOver) {
 		return;
 	}
-	position = position.split("");
-	let col  = parseInt(position[1]);
-	let row  = currentCols[col];
+	let col = parseInt(position.split("")[1]);
+	let row = currentCols[col];
 	if (row < 0) {
 		return;
 	}
-	board[row][col] = currentTurnPlayer;
+	board[row][col] = color;
 	let piece       = document.getElementById(row.toString() + col);
 	if (currentTurnPlayer === redPlayer) {
 		piece.classList.add("red");
@@ -69,66 +103,6 @@ function setPiece(position) {
 	}
 	row -= 1;
 	currentCols[col] = row;
-	
-	checkWinner();
-}
-
-function checkWinner() {
-	for (let i = 0; i < ROWS; i++) {
-		for (let j = 0; j < COLS - 3; j++) {
-			if (board[i][j] !== " ") {
-				if (board[i][j] === board[i][j + 1] && board[i][j] === board[i][j + 2] && board[i][j] === board[i][j + 3]) {
-					setWinner(i, j);
-					return;
-				}
-			}
-		}
-	}
-	
-	for (let j = 0; j < COLS; j++) {
-		for (let i = 0; i < ROWS - 3; i++) {
-			if (board[i][j] !== " ") {
-				if (board[i][j] === board[i + 1][j] && board[i][j] === board[i + 2][j] && board[i][j] === board[i + 3][j]) {
-					setWinner(i, j);
-					return;
-				}
-			}
-		}
-	}
-	
-	for (let i = 0; i < ROWS - 3; i++) {
-		for (let j = 0; j < COLS - 3; j++) {
-			if (board[i][j] !== " ") {
-				if (board[i][j] === board[i + 1][j + 1] && board[i][j] === board[i + 2][j + 2] && board[i][j] === board[i + 3][j + 3]) {
-					setWinner(i, j);
-					return;
-				}
-			}
-		}
-	}
-	
-	for (let i = 3; i < ROWS; i++) {
-		for (let j = 0; j < COLS - 3; j++) {
-			if (board[i][j] !== " ") {
-				if (board[i][j] === board[i - 1][j + 1] && board[i][j] === board[i - 2][j + 2] && board[i][j] === board[i - 3][j + 3]) {
-					setWinner(i, j);
-					return;
-				}
-			}
-		}
-	}
-}
-
-function setWinner(i, j) {
-	let winnerTitle = document.getElementById("winner");
-	if (board[i][j] === redPlayer) {
-		winnerTitle.innerText = "Red Wins";
-	}
-	else {
-		winnerTitle.innerText = "Yellow Wins";
-	}
-	winner     = board[i][j];
-	isGameOver = true;
 }
 
 function resetGame() {
@@ -147,4 +121,11 @@ function resetGame() {
 	setGame();
 }
 
-document.getElementById("resetBtn").addEventListener("click", resetGame);
+document.getElementById("resetBtn")
+        .addEventListener("click", () => {
+	        socket.emit("reset", {
+		        player: myColor,
+	        });
+	
+	        resetGame();
+        });
