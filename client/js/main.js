@@ -1,16 +1,28 @@
-const redPlayer    = "R";
-const yellowPlayer = "Y";
-let currentPlayer  = redPlayer;
+let socket = io();
+
+const redPlayer       = "R";
+const yellowPlayer    = "Y";
+let currentTurnPlayer = redPlayer;
+let myColor           = null;
 
 let currentCols;
-let winner   = null;
-let gameOver = false;
+let winner     = null;
+let isGameOver = false;
 
 let board;
 const ROWS = 6;
 const COLS = 7;
 
 window.onload = setGame;
+
+socket.on("details", (data) => {
+	if (data.valid) {
+		myColor = data.color;
+	}
+	else {
+		socket.disconnect();
+	}
+});
 
 function setGame() {
 	board       = [];
@@ -21,34 +33,39 @@ function setGame() {
 		for (let j = 0; j < COLS; j++) {
 			row.push(" ");
 			let piece = document.createElement("div");
-			piece.id  = i.toString() + "-" + j.toString();
+			piece.id  = i.toString() + j;
 			piece.classList.add("piece");
-			piece.addEventListener("click", setPiece);
+			piece.addEventListener("click", setPieceListener);
 			document.getElementById("board").append(piece);
 		}
 		board.push(row);
 	}
 }
 
-function setPiece() {
-	if (gameOver) {
+function setPieceListener() {
+	setPiece(this.id);
+}
+
+
+function setPiece(position) {
+	if (isGameOver) {
 		return;
 	}
-	let position = this.id.split("-");
-	let col      = parseInt(position[1]);
-	let row      = currentCols[col];
+	position = position.split("");
+	let col  = parseInt(position[1]);
+	let row  = currentCols[col];
 	if (row < 0) {
 		return;
 	}
-	board[row][col] = currentPlayer;
-	let piece       = document.getElementById(row.toString() + "-" + col.toString());
-	if (currentPlayer === redPlayer) {
+	board[row][col] = currentTurnPlayer;
+	let piece       = document.getElementById(row.toString() + col);
+	if (currentTurnPlayer === redPlayer) {
 		piece.classList.add("red");
-		currentPlayer = yellowPlayer;
+		currentTurnPlayer = yellowPlayer;
 	}
 	else {
 		piece.classList.add("yellow");
-		currentPlayer = redPlayer;
+		currentTurnPlayer = redPlayer;
 	}
 	row -= 1;
 	currentCols[col] = row;
@@ -110,15 +127,15 @@ function setWinner(i, j) {
 	else {
 		winnerTitle.innerText = "Yellow Wins";
 	}
-	winner   = board[i][j];
-	gameOver = true;
+	winner     = board[i][j];
+	isGameOver = true;
 }
 
 function resetGame() {
-	gameOver      = false;
-	currentPlayer = winner ?? redPlayer;
-	currentCols   = null;
-	board         = null;
+	isGameOver        = false;
+	currentTurnPlayer = winner ?? redPlayer;
+	currentCols       = null;
+	board             = null;
 	
 	const lastBoard = document.getElementById("board");
 	while (lastBoard.firstChild) {
